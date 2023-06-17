@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.33530.505
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sendchamp.sdk", "sendchamp.sdk\sendchamp.sdk.csproj", "{F3A98C1F-0E2D-4FA8-9114-EE4814EA287E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F3A98C1F-0E2D-4FA8-9114-EE4814EA287E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F3A98C1F-0E2D-4FA8-9114-EE4814EA287E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F3A98C1F-0E2D-4FA8-9114-EE4814EA287E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F3A98C1F-0E2D-4FA8-9114-EE4814EA287E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {DCDA892F-9F7D-4C9F-8182-0EE84F6A9DD7}
+	EndGlobalSection
+EndGlobal
