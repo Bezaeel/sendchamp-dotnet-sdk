@@ -12,4 +12,9 @@
     <PackageReference Include="RestSharp" Version="110.2.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Sms\Enums\" />
+    <Folder Include="Sms\Models\" />
+  </ItemGroup>
+
 </Project>

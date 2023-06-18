@@ -9,6 +9,6 @@ namespace sendchamp.sdk
     public class SendChampConfig
     {
         public string BaseUrl { get; set; }
-        public string privateKey { get; set; }
+        public string PublicKey { get; set; }
     }
 }
