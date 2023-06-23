@@ -10,7 +10,7 @@ namespace sendchamp.sdk.Sms.Enums
         [Description("MARKETING")]
         MARKETING,
 
-        [Description("TRANSACTION & MARKETING")]
+        [Description("TRANSACTION_MARKETING")]
         TRANSACTION_AND_MARKETING
     }
 

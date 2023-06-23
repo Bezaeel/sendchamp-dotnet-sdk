@@ -1,4 +1,5 @@
 ﻿using sendchamp.sdk.Sms.Enums;
+using System.Text.Json.Serialization;
 
 namespace sendchamp.sdk.Sms.Models
 {
@@ -25,9 +26,16 @@ namespace sendchamp.sdk.Sms.Models
 
     public class SendSmsRequest
     {
+        [JsonPropertyName("to")]
         public List<string> To { get; set; }
+
+        [JsonPropertyName("message")]
         public string Message { get; set; }
+
+        [JsonPropertyName("sender_name")]
         public string SenderName { get; set; }
+
+        [JsonPropertyName("route")]
         public string Route { get; set; }
     }
 
@@ -41,18 +49,16 @@ namespace sendchamp.sdk.Sms.Models
 
     public class SendSmsResponseData
     {
-        public int Id { get; set; }
-        public string PhoneNumber { get; set; }
-        public string Reference { get; set; }
-        public string Amount { get; set; }
-        public string ServiceCharge { get; set; }
-        public string Status { get; set; }
-        public string DeliveredAt { get; set; }
-        public int TotalSms { get; set; }
-        public string BusinessUID { get; set; }
-        public string UID { get; set; }
-        public string SentAt { get; set; }
+        [JsonPropertyName("total_contacts")]
+        public int TotalContacts { get; set; }
+
+        [JsonPropertyName("business_id")]
+        public string BusinessID { get; set; }
+
+        [JsonPropertyName("created_at")]
         public string CreatedAt { get; set; }
+
+        [JsonPropertyName("updated_at")]
         public string UpdatedAt { get; set; }
 
     }

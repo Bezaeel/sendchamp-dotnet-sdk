@@ -3,6 +3,8 @@ using Microsoft.Extensions.Options;
 using RestSharp;
 using sendchamp.sdk.Sms.Enums;
 using sendchamp.sdk.Sms.Models;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace sendchamp.sdk.Sms
 {
@@ -11,6 +13,7 @@ namespace sendchamp.sdk.Sms
         private readonly RestClient _client;
         private readonly ILogger<Sms> _logger;
         private readonly SendChampConfig _config;
+        private readonly HttpClient client = new HttpClient();
 
         public Sms(ILogger<Sms> logger, IOptions<SendChampConfig> config)
         {
@@ -20,6 +23,11 @@ namespace sendchamp.sdk.Sms
             {
                 Authenticator = new Authenticator(_config)
             });
+            client.BaseAddress = new Uri(_config.BaseUrl);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+            //client.DefaultRequestHeaders.Add("Content-Type", "application/json");
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {_config.PublicKey}");
+
         }
 
         public async Task<BaseResponse> SingleSmsDeliveryReport(string smsUID)
@@ -32,12 +40,12 @@ namespace sendchamp.sdk.Sms
             {
                 return new BaseResponse
                 {
-                    Status = true,
+                    Status = response.Data.Status,
                     Message = response.Data.Message,
                 };
             }
 
-            return new BaseResponse { Status = false, Message = response.Content };
+            return new BaseResponse { Status = response.Data.Status, Message = response.Content };
         }
 
         public async Task<BaseResponse> BulkSmsDeliveryReport(string smsUID)
@@ -50,12 +58,12 @@ namespace sendchamp.sdk.Sms
             {
                 return new BaseResponse
                 {
-                    Status = true,
+                    Status = response.Data.Status,
                     Message = response.Data.Message,
                 };
             }
 
-            return new BaseResponse { Status = false, Message = response.Content };
+            return new BaseResponse { Status = response.Data.Status, Message = response.Content };
         }
 
         public async Task<BaseResponse<CreateSenderIdResponseData>> CreateSenderId(CreateSenderIdRequestDTO dto)
@@ -76,7 +84,7 @@ namespace sendchamp.sdk.Sms
             {
                 return new BaseResponse<CreateSenderIdResponseData>
                 {
-                    Status = true,
+                    Status = response.Data.Status,
                     Message = response.Data.Message,
                     Data = response.Data.Data,
                     Error = response.Data.Error,
@@ -84,7 +92,7 @@ namespace sendchamp.sdk.Sms
                 };
             }
 
-            return new BaseResponse<CreateSenderIdResponseData> { Status = false, Message = response.Content };
+            return new BaseResponse<CreateSenderIdResponseData> { Status = response.Data.Status, Message = response.Content };
         }
 
         public async Task<BaseResponse<SendSmsResponseData>> Send(SendSmsRequestDTO dto)
@@ -97,23 +105,27 @@ namespace sendchamp.sdk.Sms
                 To = dto.To,
             };
 
-            string requestRoute = "sms/send";
-            var request = new RestRequest(requestRoute, Method.Post);
-            request.AddJsonBody(body);
-            var response = await _client.ExecuteAsync<BaseResponse<SendSmsResponseData>>(request);
+            string requestRoute = "/sms/send";
+            //var request = new RestRequest(requestRoute, Method.Post);
+            //request.AddJsonBody(body);
+            //var response = await _client.ExecuteAsync<BaseResponse<SendSmsResponseData>>(request);
+            var response = await client.PostAsJsonAsync<SendSmsRequest>(requestRoute, body);
+            var r = await response.Content.ReadAsStringAsync();
+            var rs = JsonSerializer.Deserialize<BaseResponse<SendSmsResponseData>>(r);
+            return rs;
 
-            if (response.IsSuccessful)
-            {
-                return new BaseResponse<SendSmsResponseData>
-                {
-                    Status = true,
-                    Message = response.Data.Message,
-                    Data = response.Data.Data,
-                    Error = response.Data.Error,
-                    Code = response.Data.Code,
-                };
-            }
-            return new BaseResponse<SendSmsResponseData> { Status = false, Message = response.Content };
+            //if (response.IsSuccessStatusCode)
+            //{
+            //    return new BaseResponse<SendSmsResponseData>
+            //    {
+            //        Status = response.Data.Status,
+            //        Message = response.Data.Message,
+            //        Data = response.Data.Data,
+            //        Error = response.Data.Error,
+            //        Code = response.Data.Code,
+            //    };
+            //}
+            //return new BaseResponse<SendSmsResponseData> { Status = response.Data.Status, Message = response.Content};
         }
     }
 }
