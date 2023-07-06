@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using RestSharp;
 using sendchamp.sdk.Sms.Enums;
 using sendchamp.sdk.Sms.Models;
+using System.Diagnostics;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -10,122 +11,139 @@ namespace sendchamp.sdk.Sms
 {
     public class Sms : ISms
     {
-        private readonly RestClient _client;
+        private readonly HttpClient _client;
         private readonly ILogger<Sms> _logger;
         private readonly SendChampConfig _config;
-        private readonly HttpClient client = new HttpClient();
 
-        public Sms(ILogger<Sms> logger, IOptions<SendChampConfig> config)
+        public Sms(ILogger<Sms> logger, IOptions<SendChampConfig> config, HttpClient client)
         {
             _logger = logger;
             _config = config.Value;
-            _client = new RestClient(new RestClientOptions(_config.BaseUrl)
-            {
-                Authenticator = new Authenticator(_config)
-            });
-            client.BaseAddress = new Uri(_config.BaseUrl);
-            client.DefaultRequestHeaders.Add("Accept", "application/json");
-            //client.DefaultRequestHeaders.Add("Content-Type", "application/json");
-            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {_config.PublicKey}");
+            _client = client;
+            _client.BaseAddress = new Uri(_config.BaseUrl);
+            _client.DefaultRequestHeaders.Add("Accept", "application/json");
+            _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {_config.PublicKey}");
 
         }
 
-        public async Task<BaseResponse> SingleSmsDeliveryReport(string smsUID)
+        public async Task<BaseResponse<SendChampResponse<BulkSmsDeliveryReportData>>> BulkSmsDeliveryReport(string smsUID)
         {
-            string requestRoute = $"sms/status/{smsUID}";
-            var request = new RestRequest(requestRoute, Method.Get);
-            var response = await _client.ExecuteAsync<BaseResponse<CreateSenderIdResponseData>>(request);
-
-            if (response.IsSuccessful)
+            try
             {
-                return new BaseResponse
+                string requestRoute = $"/api/v1/sms/bulk-sms-status/{smsUID}";
+                var response = await _client.GetAsync(requestRoute);
+                var rr = await response.Content.ReadAsStringAsync();
+                var sendchampResponse = JsonSerializer.Deserialize<SendChampResponse<BulkSmsDeliveryReportData>>(rr);
+                return new BaseResponse<SendChampResponse<BulkSmsDeliveryReportData>>
                 {
-                    Status = response.Data.Status,
-                    Message = response.Data.Message,
+                    Status = true,
+                    Response = sendchampResponse
                 };
             }
-
-            return new BaseResponse { Status = response.Data.Status, Message = response.Content };
-        }
-
-        public async Task<BaseResponse> BulkSmsDeliveryReport(string smsUID)
-        {
-            string requestRoute = $"sms/bulk-sms-status/{smsUID}";
-            var request = new RestRequest(requestRoute, Method.Get);
-            var response = await _client.ExecuteAsync<BaseResponse<CreateSenderIdResponseData>>(request);
-
-            if (response.IsSuccessful)
+            catch (Exception ex)
             {
-                return new BaseResponse
+                return new BaseResponse<SendChampResponse<BulkSmsDeliveryReportData>>
                 {
-                    Status = response.Data.Status,
-                    Message = response.Data.Message,
+                    Status = false,
+                    Message = ex.ToString()
                 };
             }
-
-            return new BaseResponse { Status = response.Data.Status, Message = response.Content };
         }
 
-        public async Task<BaseResponse<CreateSenderIdResponseData>> CreateSenderId(CreateSenderIdRequestDTO dto)
+        public async Task<BaseResponse<SendChampResponse<SmsDeliveryReportData>>> SingleSmsDeliveryReport(string smsUID)
         {
-            var body = new CreateSenderIdRequest
-            {
-                Name = dto.Name,
-                Sample = dto.Sample,
-                UseCase = dto.UseCase.GetDescription(),
-            };
 
-            string requestRoute = "sms/create-sender-id";
-            var request = new RestRequest(requestRoute, Method.Post);
-            request.AddJsonBody(body);
-            var response = await _client.ExecuteAsync<BaseResponse<CreateSenderIdResponseData>>(request);
-
-            if (response.IsSuccessful)
+            try
             {
-                return new BaseResponse<CreateSenderIdResponseData>
+                if (string.IsNullOrEmpty(smsUID))
                 {
-                    Status = response.Data.Status,
-                    Message = response.Data.Message,
-                    Data = response.Data.Data,
-                    Error = response.Data.Error,
-                    Code = response.Data.Code,
+                    throw new ArgumentException("smsUID is required");
+                }
+
+                string requestRoute = $"/api/v1/sms/status/{smsUID}";
+                var response = await _client.GetAsync(requestRoute);
+                var rr = await response.Content.ReadAsStringAsync();
+                var sendchampResponse = JsonSerializer.Deserialize<SendChampResponse<SmsDeliveryReportData>>(rr);
+
+                return new BaseResponse<SendChampResponse<SmsDeliveryReportData>>
+                {
+                    Status = true,
+                    Response = sendchampResponse
                 };
             }
-
-            return new BaseResponse<CreateSenderIdResponseData> { Status = response.Data.Status, Message = response.Content };
+            catch (Exception ex)
+            {
+                return new BaseResponse<SendChampResponse<SmsDeliveryReportData>>
+                {
+                    Status = false,
+                    Message = ex.ToString()
+                };
+            }
         }
 
-        public async Task<BaseResponse<SendSmsResponseData>> Send(SendSmsRequestDTO dto)
+        public async Task<BaseResponse<SendChampResponse<CreateSenderIdResponseData>>> CreateSenderId(CreateSenderIdRequestDTO dto)
         {
-            var body = new SendSmsRequest
+            try
             {
-                SenderName = dto.SenderName,
-                Message = dto.Message,
-                Route = dto.Route.GetDescription(),
-                To = dto.To,
-            };
+                var body = new CreateSenderIdRequest
+                {
+                    Name = dto.Name,
+                    Sample = dto.Sample,
+                    UseCase = dto.UseCase.GetDescription(),
+                };
 
-            string requestRoute = "/sms/send";
-            //var request = new RestRequest(requestRoute, Method.Post);
-            //request.AddJsonBody(body);
-            //var response = await _client.ExecuteAsync<BaseResponse<SendSmsResponseData>>(request);
-            var response = await client.PostAsJsonAsync<SendSmsRequest>(requestRoute, body);
-            var r = await response.Content.ReadAsStringAsync();
-            var rs = JsonSerializer.Deserialize<BaseResponse<SendSmsResponseData>>(r);
-            return rs;
+                string requestRoute = "/api/v1/sms/create-sender-id";
+                var response = await _client.PostAsJsonAsync(requestRoute, body);
+                var rr = await response.Content.ReadAsStringAsync();
+                var sendchampResponse = JsonSerializer.Deserialize<SendChampResponse<CreateSenderIdResponseData>>(rr);
 
-            //if (response.IsSuccessStatusCode)
-            //{
-            //    return new BaseResponse<SendSmsResponseData>
-            //    {
-            //        Status = response.Data.Status,
-            //        Message = response.Data.Message,
-            //        Data = response.Data.Data,
-            //        Error = response.Data.Error,
-            //        Code = response.Data.Code,
-            //    };
-            //}
-            //return new BaseResponse<SendSmsResponseData> { Status = response.Data.Status, Message = response.Content};
+                return new BaseResponse<SendChampResponse<CreateSenderIdResponseData>>
+                {
+                    Status = true,
+                    Response = sendchampResponse
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse<SendChampResponse<CreateSenderIdResponseData>>
+                {
+                    Status = false,
+                    Message = ex.ToString()
+                };
+            }
+        }
+
+        public async Task<BaseResponse<SendChampResponse<SendSmsResponseData>>> Send(SendSmsRequestDTO dto)
+        {
+            try
+            {
+                var body = new SendSmsRequest
+                {
+                    SenderName = dto.SenderName,
+                    Message = dto.Message,
+                    Route = dto.Route.GetDescription(),
+                    To = dto.To,
+                };
+
+                string requestRoute = "/api/v1/sms/send";
+                var response = await _client.PostAsJsonAsync(requestRoute, body);
+                var rr = await response.Content.ReadAsStringAsync();
+                var sendchampResponse =  JsonSerializer.Deserialize<SendChampResponse<SendSmsResponseData>>(rr);
+
+                return new BaseResponse<SendChampResponse<SendSmsResponseData>>
+                {
+                    Status = true,
+                    Response = sendchampResponse
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse<SendChampResponse<SendSmsResponseData>>
+                {
+                    Status = false,
+                    Message = ex.ToString()
+                };
+            }
         }
     }
 }

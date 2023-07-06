@@ -9,27 +9,11 @@ namespace sendchamp.sdk
 {
     public class BaseResponse<T>
     {
-        [JsonPropertyName("status_code")]
-        public int Code { get; set; }
         [JsonPropertyName("status")]
-        public string Status { get; set; }
+        public bool Status { get; set; }
         [JsonPropertyName("message")]
         public string Message { get; set; }
-        [JsonPropertyName("errors")]
-        public string Error { get; set; }
-        [JsonPropertyName("data")]
-        public T Data { get; set; }
-    }
-
-    public class BaseResponse
-    {
-        [JsonPropertyName("code")]
-        public string Code { get; set; }
-        [JsonPropertyName("status")]
-        public string Status { get; set; }
-        [JsonPropertyName("message")]
-        public string Message { get; set; }
-        [JsonPropertyName("errors")]
-        public string Error { get; set; }
+        [JsonPropertyName("response")]
+        public T Response { get; set; }
     }
 }
